@@ -1,312 +1,428 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Color Pulse | Leadership Personality Test</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Tone.js for Sound Effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    
+    <!-- Canvas Confetti for Celebration -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
     <style>
+        :root {
+            --red-glow: rgba(239, 68, 68, 0.3);
+            --blue-glow: rgba(59, 130, 246, 0.3);
+            --yellow-glow: rgba(250, 204, 21, 0.3);
+            --green-glow: rgba(34, 197, 94, 0.3);
+            --current-glow: rgba(99, 102, 241, 0.2); /* Default Indigo */
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f172a, #1e293b);
+            font-family: 'Outfit', sans-serif;
+            background-color: #0f172a;
             color: #f8fafc;
             min-height: 100vh;
             overflow-x: hidden;
+            /* Smooth background transition when dominant color changes */
+            transition: background-color 1s ease;
         }
 
-
-        .fade-in {
-            animation: fadeIn 0.5s ease-out forwards;
+        /* Glassmorphism utilities */
+        .glass {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-       
-        .slide-up {
-            animation: slideUp 0.6s ease-out forwards;
-            opacity: 0;
-            transform: translateY(20px);
+        
+        .glass-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            border-left: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
         }
 
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
 
-        .pulse-slow {
-            animation: pulseSlow 3s infinite;
-        }
-
+        .fade-in { animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .slide-up { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(30px); }
+        .pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .float { animation: float 6s ease-in-out infinite; }
+        .spin-slow { animation: spin 8s linear infinite; }
 
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
         }
 
-
         @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(40px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-
-        @keyframes pulseSlow {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.05); opacity: 1; }
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.95); }
+            100% { transform: scale(1.05); background-color: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.5); }
         }
 
-
-        /* Custom scrollbar for answers */
-        ::-webkit-scrollbar {
-            width: 8px;
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(2deg); }
         }
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.4);
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
+        /* Ambient Background Orbs */
+        .ambient-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            z-index: -1;
+            opacity: 0.5;
+            transition: all 1.5s ease-in-out;
+        }
+
+        #orb1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--current-glow); animation: float 8s infinite alternate; }
+        #orb2 { bottom: -10%; right: -10%; width: 40vw; height: 40vw; background: var(--blue-glow); animation: float 10s infinite alternate-reverse; }
 
         /* Option card hover effects */
         .option-card {
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid rgba(255, 255, 255, 0.05);
         }
         .option-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(255, 255, 255, 0.3);
-            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-4px) scale(1.02);
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
         }
         .option-card:active {
-            transform: translateY(0);
+            transform: translateY(0) scale(0.98);
+        }
+        
+        /* Magic text gradient */
+        .text-gradient {
+            background-size: 200% 200%;
+            animation: gradientMove 3s ease infinite;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center relative">
+<body class="flex flex-col items-center justify-center relative selection:bg-indigo-500 selection:text-white">
 
+    <!-- Dynamic Background Orbs -->
+    <div id="orb1" class="ambient-orb"></div>
+    <div id="orb2" class="ambient-orb"></div>
 
-    <!-- Background Decorative Elements -->
-    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-        <div class="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-blue-600/10 blur-[100px] pulse-slow"></div>
-        <div class="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-purple-600/10 blur-[100px] pulse-slow" style="animation-delay: 1.5s;"></div>
-    </div>
-
-
-    <main class="w-full max-w-3xl p-6 sm:p-8 flex flex-col justify-center min-h-screen">
-       
-        <!-- Screen 1: Welcome -->
+    <main class="w-full max-w-4xl p-4 sm:p-8 flex flex-col justify-center min-h-screen relative z-10">
+        
+        <!-- ==================== SCREEN 1: WELCOME ==================== -->
         <section id="welcome-screen" class="text-center slide-up flex flex-col items-center">
-            <div class="mb-6 flex space-x-2 justify-center">
-                <div class="w-6 h-6 rounded-full bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]"></div>
-                <div class="w-6 h-6 rounded-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
-                <div class="w-6 h-6 rounded-full bg-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]"></div>
-                <div class="w-6 h-6 rounded-full bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.5)]"></div>
+            
+            <!-- Floating Colored Dots Graphic -->
+            <div class="mb-8 flex space-x-3 justify-center float">
+                <div class="w-6 h-6 rounded-full bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.7)]"></div>
+                <div class="w-6 h-6 rounded-full bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.7)] mt-4"></div>
+                <div class="w-6 h-6 rounded-full bg-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.7)]"></div>
+                <div class="w-6 h-6 rounded-full bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.7)] mt-4"></div>
             </div>
-            <h1 class="text-4xl sm:text-6xl font-extrabold mb-4 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+            
+            <div class="inline-block px-4 py-1.5 rounded-full glass text-sm font-semibold tracking-widest uppercase mb-4 text-gray-300">
+                Leadership Personality Test
+            </div>
+            
+            <h1 class="text-5xl sm:text-7xl font-black mb-6 tracking-tight text-gradient bg-gradient-to-r from-white via-indigo-200 to-white pb-2 drop-shadow-lg">
                 Color Pulse
             </h1>
-            <p class="text-lg sm:text-xl text-gray-300 mb-8 max-w-xl mx-auto font-light">
-                Discover your core leadership style. In just 5 questions, find out which "Color" drives your decisions, communication, and team interactions.
+            
+            <p class="text-lg sm:text-2xl text-gray-300 mb-10 max-w-2xl mx-auto font-light leading-relaxed">
+                Discover your core leadership style. In just <span class="font-bold text-white">5 intuitive questions</span>, reveal the hidden "Color" that drives your decisions, communication, and team impact.
             </p>
-            <button onclick="startQuiz()" class="px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-full text-lg shadow-[0_0_30px_rgba(99,102,241,0.4)] transition-all transform hover:scale-105 active:scale-95">
-                Start the Assessment
+            
+            <button onclick="startQuiz()" class="group relative px-8 py-5 bg-white text-gray-900 font-bold rounded-full text-xl shadow-[0_0_40px_rgba(255,255,255,0.3)] transition-all hover:scale-105 active:scale-95 overflow-hidden">
+                <span class="relative z-10 flex items-center">
+                    Begin Assessment
+                    <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </span>
+                <div class="absolute inset-0 bg-gradient-to-r from-gray-100 to-gray-300 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
             </button>
         </section>
 
-
-        <!-- Screen 2: Quiz -->
+        <!-- ==================== SCREEN 2: QUIZ ==================== -->
         <section id="quiz-screen" class="hidden w-full flex-col">
-            <!-- Progress Bar -->
-            <div class="w-full mb-8">
-                <div class="flex justify-between text-sm text-gray-400 mb-2 font-semibold tracking-wider uppercase">
-                    <span>Question <span id="current-q-num">1</span> of 5</span>
-                    <span id="progress-percent">20%</span>
+            
+            <!-- Header & Progress -->
+            <div class="w-full mb-8 flex flex-col sm:flex-row justify-between items-center glass rounded-2xl p-4">
+                <div class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 mb-2 sm:mb-0">
+                    Question <span id="current-q-num" class="text-indigo-400 text-xl">1</span><span class="text-gray-500 text-sm">/5</span>
                 </div>
-                <div class="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden">
-                    <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-2.5 rounded-full transition-all duration-500 ease-out" style="width: 20%"></div>
+                
+                <div class="w-full sm:w-1/2 flex items-center space-x-4">
+                    <div class="w-full bg-gray-800 rounded-full h-3 overflow-hidden shadow-inner">
+                        <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 h-3 rounded-full transition-all duration-700 ease-out shadow-[0_0_10px_rgba(168,85,247,0.5)]" style="width: 20%"></div>
+                    </div>
+                    <span id="progress-percent" class="text-sm font-bold text-gray-300 w-10 text-right">20%</span>
                 </div>
             </div>
 
-
-            <!-- Question Area -->
-            <div id="question-container" class="bg-gray-800/50 backdrop-blur-md rounded-3xl p-6 sm:p-10 shadow-2xl border border-gray-700/50">
-                <h2 id="question-text" class="text-2xl sm:text-3xl font-semibold mb-8 text-center text-white min-h-[80px] flex items-center justify-center">
+            <!-- Question Card -->
+            <div id="question-container" class="glass-card rounded-3xl p-6 sm:p-10 transition-all duration-500">
+                <h2 id="question-text" class="text-2xl sm:text-4xl font-semibold mb-10 text-center text-white leading-tight min-h-[100px] flex items-center justify-center drop-shadow-md">
                     <!-- Question text injected here via JS -->
                 </h2>
 
-
-                <div id="options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div id="options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <!-- Options injected here via JS -->
                 </div>
             </div>
         </section>
 
-
-        <!-- Screen 3: Loading -->
-        <section id="loading-screen" class="hidden text-center flex-col items-center justify-center">
-            <div class="relative w-32 h-32 mx-auto mb-8">
-                <div class="absolute inset-0 border-4 border-t-red-500 border-r-blue-500 border-b-yellow-400 border-l-green-500 rounded-full animate-spin"></div>
-                <div class="absolute inset-4 border-4 border-t-yellow-400 border-r-green-500 border-b-red-500 border-l-blue-500 rounded-full animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+        <!-- ==================== SCREEN 3: LOADING ==================== -->
+        <section id="loading-screen" class="hidden text-center flex-col items-center justify-center min-h-[60vh]">
+            <div class="relative w-40 h-40 mx-auto mb-10">
+                <!-- Outer Ring -->
+                <div class="absolute inset-0 border-4 border-t-red-500 border-r-blue-500 border-b-yellow-400 border-l-green-500 rounded-full spin-slow opacity-80 shadow-[0_0_30px_rgba(255,255,255,0.2)]"></div>
+                <!-- Inner Ring -->
+                <div class="absolute inset-4 border-4 border-t-yellow-400 border-r-green-500 border-b-red-500 border-l-blue-500 rounded-full spin-slow opacity-60" style="animation-direction: reverse; animation-duration: 4s;"></div>
+                <!-- Core Pulsing dot -->
+                <div class="absolute inset-16 bg-white rounded-full shadow-[0_0_40px_rgba(255,255,255,0.8)] animate-pulse flex items-center justify-center">
+                    <span class="text-2xl">✨</span>
+                </div>
             </div>
-            <h2 class="text-3xl font-bold mb-2 pulse-slow">Analyzing your Pulse...</h2>
-            <p class="text-gray-400">Synthesizing your leadership traits</p>
+            <h2 class="text-4xl font-black mb-4 text-gradient bg-gradient-to-r from-white via-gray-300 to-white">Synthesizing Pulse...</h2>
+            <p id="loading-text" class="text-xl text-gray-400 font-light animate-pulse">Calculating your leadership dynamics</p>
         </section>
 
-
-        <!-- Screen 4: Result -->
-        <section id="result-screen" class="hidden w-full flex-col items-center slide-up text-center">
-            <div id="result-icon" class="w-32 h-32 rounded-full mb-6 shadow-2xl flex items-center justify-center border-4 border-white/20">
-                <!-- Icon injected via JS -->
+        <!-- ==================== SCREEN 4: RESULT ==================== -->
+        <section id="result-screen" class="hidden w-full flex-col items-center slide-up text-center pt-8">
+            
+            <div class="inline-block px-5 py-2 rounded-full glass text-sm font-bold tracking-widest uppercase mb-6 text-white shadow-lg">
+                Your Core Leadership Color
             </div>
-            <h2 class="text-sm font-bold tracking-widest uppercase text-gray-400 mb-2">Your Leadership Color Is</h2>
-            <h1 id="result-title" class="text-5xl sm:text-7xl font-extrabold mb-4 drop-shadow-lg">
+            
+            <div id="result-icon-container" class="relative group mb-6">
+                <div id="result-icon-glow" class="absolute inset-0 rounded-full blur-2xl opacity-70 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div id="result-icon" class="relative w-36 h-36 rounded-full shadow-2xl flex items-center justify-center border-4 border-white/30 backdrop-blur-md transform transition-transform group-hover:scale-110 duration-500 text-5xl">
+                    <!-- Icon injected via JS -->
+                </div>
+            </div>
+            
+            <h1 id="result-title" class="text-6xl sm:text-8xl font-black mb-4 drop-shadow-2xl tracking-tight">
                 <!-- Title injected via JS -->
             </h1>
-            <p id="result-subtitle" class="text-xl sm:text-2xl font-light mb-8 max-w-2xl text-gray-300">
+            
+            <p id="result-subtitle" class="text-2xl sm:text-3xl font-light mb-10 max-w-2xl text-white opacity-90">
                 <!-- Subtitle injected via JS -->
             </p>
 
-
-            <div class="bg-gray-800/50 backdrop-blur-md rounded-3xl p-6 sm:p-8 w-full max-w-2xl text-left border border-gray-700/50 mb-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                    <h3 class="text-lg font-bold mb-3 flex items-center text-white"><span class="mr-2">✨</span> Superpowers</h3>
-                    <ul id="result-strengths" class="space-y-2 text-gray-300 text-sm list-disc list-inside">
+            <div class="glass-card rounded-3xl p-6 sm:p-10 w-full max-w-4xl text-left mb-10 grid grid-cols-1 md:grid-cols-2 gap-8 relative overflow-hidden">
+                <!-- Decorative background accent in the card -->
+                <div id="card-accent" class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                
+                <div class="relative z-10 bg-gray-900/40 p-6 rounded-2xl border border-white/5">
+                    <h3 class="text-2xl font-black mb-4 flex items-center text-white">
+                        <span class="mr-3 bg-white/10 p-2 rounded-lg">✨</span> Superpowers
+                    </h3>
+                    <ul id="result-strengths" class="space-y-4 text-gray-200 text-lg font-light">
                         <!-- Strengths injected via JS -->
                     </ul>
                 </div>
-                <div>
-                    <h3 class="text-lg font-bold mb-3 flex items-center text-white"><span class="mr-2">🔍</span> Watch Out For</h3>
-                    <ul id="result-blindspots" class="space-y-2 text-gray-300 text-sm list-disc list-inside">
+                
+                <div class="relative z-10 bg-gray-900/40 p-6 rounded-2xl border border-white/5">
+                    <h3 class="text-2xl font-black mb-4 flex items-center text-white">
+                        <span class="mr-3 bg-white/10 p-2 rounded-lg">🔍</span> Watch Out For
+                    </h3>
+                    <ul id="result-blindspots" class="space-y-4 text-gray-200 text-lg font-light">
                         <!-- Blindspots injected via JS -->
                     </ul>
                 </div>
             </div>
 
-
-            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                <button onclick="copyForZoom()" class="px-8 py-3 bg-white text-gray-900 font-bold rounded-full text-lg shadow-lg hover:bg-gray-200 transition-all transform hover:scale-105 flex items-center justify-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                    Copy for Zoom Chat
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6 w-full sm:w-auto">
+                <button onclick="copyForZoom()" id="copy-btn" class="flex-1 sm:flex-none px-8 py-4 bg-white text-gray-900 font-black rounded-full text-lg shadow-[0_0_20px_rgba(255,255,255,0.4)] hover:scale-105 transition-transform flex items-center justify-center group">
+                    <svg class="w-6 h-6 mr-3 text-gray-700 group-hover:text-black transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                    Copy for Chat
                 </button>
-                <button onclick="resetQuiz()" class="px-8 py-3 bg-transparent border-2 border-gray-500 text-gray-300 font-bold rounded-full text-lg hover:bg-gray-800 hover:text-white transition-all">
-                    Retake Test
+                <button onclick="resetQuiz()" class="flex-1 sm:flex-none px-8 py-4 glass border-2 border-white/20 text-white font-bold rounded-full text-lg hover:bg-white/10 hover:scale-105 transition-all">
+                    Retake Assessment
                 </button>
             </div>
-           
-            <!-- Toast notification for copy action -->
-            <div id="toast" class="fixed bottom-5 right-5 bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg transform transition-all duration-300 translate-y-20 opacity-0 font-medium">
-                Copied to clipboard!
-            </div>
+            
         </section>
 
+        <!-- Toast notification for copy action -->
+        <div id="toast" class="fixed bottom-5 sm:bottom-10 right-5 sm:right-10 bg-green-500 text-white px-6 py-4 rounded-2xl shadow-[0_10px_30px_rgba(34,197,94,0.4)] transform transition-all duration-500 translate-y-32 opacity-0 font-bold text-lg flex items-center z-50">
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+            <span id="toast-message">Copied to clipboard!</span>
+        </div>
 
     </main>
 
-
     <script>
-        // Data Structure: Mapping answers to the 4 colors
-        // Red: Driver/Action, Blue: Analyst/Logic, Yellow: Inspirer/Social, Green: Supporter/Empathy
+        // --- AUDIO SYSTEM (Tone.js) ---
+        let synth, chordSynth;
+        let audioInitialized = false;
+
+        function initAudio() {
+            if (audioInitialized) return;
+            
+            // Interaction click sound
+            synth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "sine" },
+                envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 }
+            }).toDestination();
+            synth.volume.value = -12;
+
+            // Success/Result chord sound
+            chordSynth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "triangle" },
+                envelope: { attack: 0.05, decay: 0.2, sustain: 0.4, release: 1.5 }
+            }).toDestination();
+            chordSynth.volume.value = -10;
+
+            Tone.start();
+            audioInitialized = true;
+        }
+
+        function playHover() {
+            if(audioInitialized && synth) synth.triggerAttackRelease("G5", "16n");
+        }
+
+        function playClick() {
+            if(audioInitialized && synth) synth.triggerAttackRelease("C6", "8n");
+        }
+
+        function playSuccess() {
+            if(audioInitialized && chordSynth) chordSynth.triggerAttackRelease(["C4", "E4", "G4", "C5"], "2n");
+        }
+
+
+        // --- QUIZ DATA ---
         const questions = [
             {
                 text: "When facing a massive, unexpected deadline change, you naturally...?",
                 options: [
-                    { text: "Immediately draft a new action plan and delegate tasks.", color: "red" },
-                    { text: "Analyze the new timeline to figure out exactly what went wrong and how to adjust.", color: "blue" },
-                    { text: "Rally the team, keeping morale high and brainstorming creative shortcuts.", color: "yellow" },
-                    { text: "Check in with everyone to make sure they aren't too stressed before making a plan.", color: "green" }
+                    { text: "🚀 Draft a new action plan immediately and aggressively delegate tasks.", color: "red" },
+                    { text: "📊 Analyze the new timeline to figure out exactly how to adjust variables safely.", color: "blue" },
+                    { text: "🎉 Rally the team, keeping morale high and brainstorming creative shortcuts.", color: "yellow" },
+                    { text: "🤝 Check in with everyone to ensure they aren't too stressed before making a plan.", color: "green" }
                 ]
             },
             {
-                text: "In a meeting, your communication is...?",
+                text: "In a crucial strategy meeting, your communication style is mostly...?",
                 options: [
-                    { text: "Thoughtful, inclusive, and focused on making sure everyone is heard.", color: "green" },
-                    { text: "Direct, to the point, and focused on outcomes.", color: "red" },
-                    { text: "Expressive, energetic, and full of big ideas.", color: "yellow" },
-                    { text: "Detailed, structured, and backed by data.", color: "blue" }
+                    { text: "🕊️ Thoughtful, inclusive, and focused on making sure every voice is heard.", color: "green" },
+                    { text: "⚔️ Direct, to the point, and heavily focused on immediate outcomes.", color: "red" },
+                    { text: "💡 Expressive, highly energetic, and full of big, overarching ideas.", color: "yellow" },
+                    { text: "🧠 Detailed, highly structured, and strictly backed by empirical data.", color: "blue" }
                 ]
             },
             {
-                text: "Two friends or co-workers are in a heated conflict. You...?",
+                text: "Two of your top performers are in a heated personal conflict. You...?",
                 options: [
-                    { text: "Use humor and charm to de-escalate the tension and shift the mood.", color: "yellow" },
-                    { text: "Empathize with both individuals and help them find common ground privately.", color: "green" },
-                    { text: "Step in and decisively settle the issue so work can continue.", color: "red" },
-                    { text: "Listen to both sides objectively and look for the most logical solution.", color: "blue" }
+                    { text: "✨ Use humor and personal charm to de-escalate the tension and shift the mood.", color: "yellow" },
+                    { text: "❤️ Empathize with both individuals and help them find common ground privately.", color: "green" },
+                    { text: "🔥 Step in and decisively settle the issue right then so work can continue.", color: "red" },
+                    { text: "⚖️ Listen to both sides completely objectively and construct a logical compromise.", color: "blue" }
                 ]
             },
             {
                 text: "When you receive critical feedback, it’s usually because you...?",
                 options: [
-                    { text: "Got bogged down in the details and missed the bigger picture.", color: "blue" },
-                    { text: "Lost track of follow-through on a brilliant new idea.", color: "yellow" },
-                    { text: "Avoided a necessary confrontation to keep the peace.", color: "green" },
-                    { text: "Pushed too hard or moved too fast without consulting others.", color: "red" }
+                    { text: "🔍 Got bogged down in the minute details and missed the bigger picture.", color: "blue" },
+                    { text: "🗣️ Chased a shiny new idea and lost track of the mundane follow-through.", color: "yellow" },
+                    { text: "🌱 Avoided a necessary but uncomfortable confrontation to keep the peace.", color: "green" },
+                    { text: "🎯 Pushed too hard or moved too fast without consulting the wider team.", color: "red" }
                 ]
             },
             {
-                text: "Your core motivation as a leader is...?",
+                text: "Deep down, your ultimate core motivation as a leader is...?",
                 options: [
-                    { text: "Achieving ambitious goals and driving success.", color: "red" },
-                    { text: "Nurturing a supportive, happy, and collaborative team.", color: "green" },
-                    { text: "Creating efficient, high-quality, and flawless systems.", color: "blue" },
-                    { text: "Inspiring others and creating a vibrant, innovative culture.", color: "yellow" }
+                    { text: "🏆 Achieving ambitious goals, winning, and driving undeniable success.", color: "red" },
+                    { text: "🏡 Nurturing a supportive, happy, and deeply loyal collaborative family.", color: "green" },
+                    { text: "⚙️ Creating highly efficient, scalable, and virtually flawless operational systems.", color: "blue" },
+                    { text: "🌟 Inspiring others and cultivating a vibrant, culturally innovative environment.", color: "yellow" }
                 ]
             }
         ];
 
-
         const profiles = {
             red: {
                 title: "The Bold Driver",
-                colorHex: "#EF4444",
-                shadow: "rgba(239, 68, 68, 0.6)",
-                icon: `<svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>`,
-                subtitle: "Action-oriented, decisive, and results-driven.",
-                strengths: ["Takes initiative quickly", "Unfazed by tough challenges", "Keeps the team focused on the finish line"],
-                blindspots: ["Can seem overly blunt or demanding", "May overlook emotional dynamics", "Might rush past important details"]
+                colorHex: "#EF4444", // Tailwind Red-500
+                glowVar: "--red-glow",
+                icon: "🚀",
+                subtitle: "Action-oriented, decisive, and fiercely results-driven.",
+                strengths: ["Takes immediate initiative without hesitation", "Remains completely unfazed by tough challenges", "Keeps the entire team laser-focused on the finish line"],
+                blindspots: ["Can sometimes be perceived as overly blunt or demanding", "May accidentally run over emotional dynamics in the room", "Might rush past important structural details to get it done"]
             },
             blue: {
                 title: "The Deep Analyst",
-                colorHex: "#3B82F6",
-                shadow: "rgba(59, 130, 246, 0.6)",
-                icon: `<svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>`,
-                subtitle: "Detail-oriented, objective, and highly strategic.",
-                strengths: ["Creates highly reliable systems", "Makes decisions based on solid data", "Excellent at identifying risks early"],
-                blindspots: ["Prone to 'analysis paralysis'", "Can appear distant or overly critical", "May struggle with ambiguous situations"]
+                colorHex: "#3B82F6", // Tailwind Blue-500
+                glowVar: "--blue-glow",
+                icon: "🧠",
+                subtitle: "Detail-oriented, fiercely objective, and highly strategic.",
+                strengths: ["Constructs highly reliable and scalable systems", "Makes bulletproof decisions based on solid empirical data", "Incredible at identifying and mitigating risks early"],
+                blindspots: ["Prone to occasional 'analysis paralysis'", "Can appear emotionally distant or overly critical to others", "May struggle when forced into highly ambiguous, dataless situations"]
             },
             yellow: {
                 title: "The Bright Inspirer",
-                colorHex: "#EAB308",
-                shadow: "rgba(234, 179, 8, 0.6)",
-                icon: `<svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>`,
-                subtitle: "Enthusiastic, persuasive, and incredibly creative.",
-                strengths: ["Highly adaptable to change", "Builds excitement and momentum", "Excellent at brainstorming and innovation"],
-                blindspots: ["May struggle with follow-through", "Can get easily distracted by new ideas", "Might gloss over unglamorous details"]
+                colorHex: "#EAB308", // Tailwind Yellow-500
+                glowVar: "--yellow-glow",
+                icon: "✨",
+                subtitle: "Endlessly enthusiastic, persuasive, and wildly creative.",
+                strengths: ["Highly adaptable and thrives in fast-changing environments", "Naturally builds excitement, momentum, and buy-in", "Excellent at brainstorming and disruptive innovation"],
+                blindspots: ["May struggle with the mundane realities of follow-through", "Can get easily distracted by the next big shiny idea", "Might gloss over unglamorous details that matter"]
             },
             green: {
                 title: "The Grounded Supporter",
-                colorHex: "#22C55E",
-                shadow: "rgba(34, 197, 94, 0.6)",
-                icon: `<svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>`,
-                subtitle: "Empathetic, reliable, and deeply team-focused.",
-                strengths: ["Builds immense trust and psychological safety", "Excellent listener and mediator", "Ensures sustainable, steady progress"],
-                blindspots: ["Often avoids necessary conflict", "May sacrifice own needs for the team", "Can be resistant to sudden changes"]
+                colorHex: "#22C55E", // Tailwind Green-500
+                glowVar: "--green-glow",
+                icon: "🤝",
+                subtitle: "Deeply empathetic, fiercely reliable, and completely team-focused.",
+                strengths: ["Builds immense organizational trust and psychological safety", "An exceptional listener and natural mediator", "Ensures sustainable, steady, and healthy progress"],
+                blindspots: ["Often avoids necessary conflict to the detriment of the goal", "Frequently sacrifices their own needs for the sake of the team", "Can be overly resistant to sudden or aggressive changes"]
             }
         };
 
-
+        // --- STATE VARIABLES ---
         let currentQuestionIndex = 0;
         let scores = { red: 0, blue: 0, yellow: 0, green: 0 };
         let finalResultColor = "";
 
-
+        // DOM Elements
         const screens = {
             welcome: document.getElementById('welcome-screen'),
             quiz: document.getElementById('quiz-screen'),
             loading: document.getElementById('loading-screen'),
             result: document.getElementById('result-screen')
         };
-
+        const root = document.documentElement;
 
         function showScreen(screenId) {
             Object.values(screens).forEach(screen => {
@@ -317,75 +433,112 @@
             screens[screenId].classList.add('flex', 'fade-in');
         }
 
-
         function startQuiz() {
+            initAudio();
+            playClick();
             currentQuestionIndex = 0;
             scores = { red: 0, blue: 0, yellow: 0, green: 0 };
+            root.style.setProperty('--current-glow', 'rgba(99, 102, 241, 0.2)'); // Reset to neutral
             showScreen('quiz');
             renderQuestion();
         }
 
-
         function renderQuestion() {
             const q = questions[currentQuestionIndex];
-           
+            
             // Update Progress
             const progress = ((currentQuestionIndex) / questions.length) * 100;
             document.getElementById('progress-bar').style.width = `${progress}%`;
             document.getElementById('progress-percent').innerText = `${Math.round(progress)}%`;
             document.getElementById('current-q-num').innerText = currentQuestionIndex + 1;
 
-
-            // Animate out old question (if not first)
+            // Animate out old question, force reflow, animate in
             const container = document.getElementById('question-container');
             container.classList.remove('slide-up');
-           
-            // Force DOM reflow to restart animation
-            void container.offsetWidth;
+            void container.offsetWidth; // trigger reflow
             container.classList.add('slide-up');
 
-
-            // Render Text
+            // Set Text
             document.getElementById('question-text').innerText = q.text;
 
-
-            // Render Options
+            // Build Options
             const optionsGrid = document.getElementById('options-grid');
             optionsGrid.innerHTML = '';
-           
+            
             q.options.forEach((opt, index) => {
                 const btn = document.createElement('button');
-                btn.className = `option-card bg-gray-700/40 text-left p-5 rounded-2xl cursor-pointer text-gray-200 font-medium leading-relaxed outline-none focus:ring-2 focus:ring-indigo-500 w-full`;
-                // Add staggered animation delay
-                btn.style.animation = `fadeIn 0.5s ease-out ${index * 0.1}s forwards`;
+                btn.className = `option-card glass text-left p-5 sm:p-6 rounded-2xl cursor-pointer text-gray-200 font-medium text-lg leading-relaxed outline-none focus:ring-4 focus:ring-indigo-500/50 w-full flex items-center group relative overflow-hidden`;
+                
+                // Staggered entrance animation
+                btn.style.animation = `fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) ${index * 0.1}s forwards`;
                 btn.style.opacity = "0";
-               
-                btn.innerHTML = `<span class="block">${opt.text}</span>`;
-                btn.onclick = () => selectAnswer(opt.color);
+                
+                btn.innerHTML = `
+                    <div class="absolute inset-0 bg-white/5 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out"></div>
+                    <span class="relative z-10 w-full flex items-start">
+                        <span class="block">${opt.text}</span>
+                    </span>
+                `;
+                
+                // Sound events
+                btn.addEventListener('mouseenter', playHover);
+                btn.onclick = (e) => selectAnswer(opt.color, btn, e);
+                
                 optionsGrid.appendChild(btn);
             });
         }
 
+        function selectAnswer(color, buttonElement, event) {
+            playClick();
+            
+            // Add pop animation to the clicked button
+            buttonElement.classList.add('pop');
+            
+            // Highlight the selected button's border based on the color it represents
+            const colorHex = profiles[color].colorHex;
+            buttonElement.style.borderColor = colorHex;
+            buttonElement.style.backgroundColor = `${colorHex}22`; // Add slight tint
 
-        function selectAnswer(color) {
             scores[color]++;
-           
-            if (currentQuestionIndex < questions.length - 1) {
-                currentQuestionIndex++;
-                renderQuestion();
-            } else {
-                // Finish Quiz
-                document.getElementById('progress-bar').style.width = `100%`;
-                document.getElementById('progress-percent').innerText = `100%`;
-                processResults();
+            
+            // Update the background ambient orb based on current leader
+            updateAmbientGlow();
+
+            // Disable all buttons to prevent double clicks during delay
+            const allButtons = document.querySelectorAll('.option-card');
+            allButtons.forEach(btn => btn.disabled = true);
+            
+            // Delay before moving to next question to show the pop animation
+            setTimeout(() => {
+                if (currentQuestionIndex < questions.length - 1) {
+                    currentQuestionIndex++;
+                    renderQuestion();
+                } else {
+                    // Finish Quiz
+                    document.getElementById('progress-bar').style.width = `100%`;
+                    document.getElementById('progress-percent').innerText = `100%`;
+                    processResults();
+                }
+            }, 450); // wait for pop animation
+        }
+
+        function updateAmbientGlow() {
+            // Find current leading color
+            let leader = "";
+            let max = -1;
+            for (const c in scores) {
+                if (scores[c] > max) { max = scores[c]; leader = c; }
+            }
+            if(leader && profiles[leader]) {
+                const varName = profiles[leader].glowVar;
+                root.style.setProperty('--current-glow', `var(${varName})`);
             }
         }
 
-
         function processResults() {
             showScreen('loading');
-           
-            // Determine winner
+            
+            // Determine absolute winner
             let highestScore = -1;
             for (const color in scores) {
                 if (scores[color] > highestScore) {
@@ -393,81 +546,142 @@
                     finalResultColor = color;
                 }
             }
-           
+            
+            // Change loading text dynamically
+            const loadTexts = ["Analyzing responses...", "Extracting core traits...", "Determining your color..."];
+            let t = 0;
+            const textInterval = setInterval(() => {
+                t++;
+                if(t < loadTexts.length) document.getElementById('loading-text').innerText = loadTexts[t];
+            }, 800);
+            
             // Simulate processing delay for dramatic effect
             setTimeout(() => {
+                clearInterval(textInterval);
                 displayResult(finalResultColor);
-            }, 2500);
+            }, 3000);
         }
 
-
         function displayResult(colorKey) {
+            playSuccess();
+            fireConfetti(profiles[colorKey].colorHex);
+
             const profile = profiles[colorKey];
-           
+            
+            // Set Background tint
+            document.body.style.backgroundColor = `${profile.colorHex}15`; // Very subtle tint of the result color
+
+            // Icon Setup
             const iconContainer = document.getElementById('result-icon');
-            iconContainer.style.backgroundColor = profile.colorHex;
-            iconContainer.style.boxShadow = `0 10px 30px ${profile.shadow}`;
+            iconContainer.style.backgroundColor = `${profile.colorHex}44`; // translucent
             iconContainer.innerHTML = profile.icon;
+            
+            const iconGlow = document.getElementById('result-icon-glow');
+            iconGlow.style.backgroundColor = profile.colorHex;
 
-
+            // Title Setup
             const title = document.getElementById('result-title');
             title.innerText = profile.title;
             title.style.color = profile.colorHex;
 
-
             document.getElementById('result-subtitle').innerText = profile.subtitle;
-
 
             // Render Lists
             const strengthsList = document.getElementById('result-strengths');
-            strengthsList.innerHTML = profile.strengths.map(s => `<li>${s}</li>`).join('');
-           
+            strengthsList.innerHTML = profile.strengths.map(s => `
+                <li class="flex items-start">
+                    <svg class="w-6 h-6 mr-3 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>${s}</span>
+                </li>`).join('');
+            
             const blindspotsList = document.getElementById('result-blindspots');
-            blindspotsList.innerHTML = profile.blindspots.map(b => `<li>${b}</li>`).join('');
-
+            blindspotsList.innerHTML = profile.blindspots.map(b => `
+                <li class="flex items-start">
+                    <svg class="w-6 h-6 mr-3 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <span>${b}</span>
+                </li>`).join('');
 
             showScreen('result');
         }
 
+        function fireConfetti(colorHex) {
+            // Use canvas-confetti library to shoot from bottom edges
+            const duration = 3000;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0, y: 0.8 },
+                    colors: [colorHex, '#ffffff']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1, y: 0.8 },
+                    colors: [colorHex, '#ffffff']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
 
         function copyForZoom() {
+            playClick();
             const profile = profiles[finalResultColor];
-            const textToCopy = `I just took the Color Pulse Leadership Test!\nMy Leadership Color is: ${profile.title} 🎨\nSuperpower: ${profile.subtitle}`;
-           
+            const textToCopy = `I just took the Color Pulse Leadership Test!\n\n🎨 My Leadership Color is: ${profile.title} ${profile.icon}\n✨ Superpower: ${profile.subtitle}`;
+            
             // Fallback for iframe restrictions using execCommand
             const textArea = document.createElement("textarea");
             textArea.value = textToCopy;
-           
-            // Make text area invisible
             textArea.style.position = "absolute";
             textArea.style.left = "-999999px";
-           
+            
             document.body.prepend(textArea);
             textArea.select();
-           
+            
             try {
-                document.execCommand('copy');
-                showToast();
+                const successful = document.execCommand('copy');
+                if(successful) {
+                    showToast("Copied to clipboard!", "bg-green-500");
+                } else {
+                    showToast("Failed to copy. Try selecting text manually.", "bg-red-500");
+                }
             } catch (error) {
                 console.error(error);
-                alert("Failed to copy. Please manually share your result!");
+                showToast("Clipboard access denied.", "bg-red-500");
             } finally {
                 textArea.remove();
             }
         }
 
-
-        function showToast() {
+        function showToast(message, bgColorClass) {
             const toast = document.getElementById('toast');
-            toast.classList.remove('translate-y-20', 'opacity-0');
-           
+            const msgEl = document.getElementById('toast-message');
+            
+            msgEl.innerText = message;
+            toast.className = `fixed bottom-5 sm:bottom-10 right-5 sm:right-10 text-white px-6 py-4 rounded-2xl shadow-2xl transform transition-all duration-500 flex items-center z-50 ${bgColorClass}`;
+            
+            // Show
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-32', 'opacity-0');
+            });
+            
+            // Hide after 3s
             setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
+                toast.classList.add('translate-y-32', 'opacity-0');
             }, 3000);
         }
 
-
         function resetQuiz() {
+            playClick();
+            document.body.style.backgroundColor = '#0f172a'; // Reset body bg
+            root.style.setProperty('--current-glow', 'rgba(99, 102, 241, 0.2)'); // Reset ambient orb
             showScreen('welcome');
         }
     </script>
